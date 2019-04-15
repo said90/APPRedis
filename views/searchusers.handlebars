@@ -1,9 +1,7 @@
-<h1>Search users</h1>
+<h1>Locking </h1>
 {{#if error}} <span>{{error}}</span>{{/if}}
 
-<form class="form-inline" method="POST" action="/user/search">
-    <div class="form-group">
-        <input type="text" name="id" placeholder="Search Users by ID" class="form-control">
-    </div>
+<form class="form-inline" method="post" action="/user/search">
+
     <input type="submit" class="btn btn-primary" value="Search">
 </form>

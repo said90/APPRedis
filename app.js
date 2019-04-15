@@ -4,7 +4,9 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const methodOverride = require('method-override');
 const redis = require('redis');
-
+let tenantAvaible = [];
+let tenantBussy = [];
+let timer = 30;
 //Create redis client
 
 let client = redis.createClient();
@@ -38,20 +40,33 @@ app.get('/', function (req, res, next) {
 
 //Search Processing
 app.post('/user/search', function (req, res, next) {
-    let id = req.body.id;
-    client.hgetall(id, function (err, obj) {
-        if (!obj) {
+    client.set(`stagepool1`, 'value', 'nx', 'ex', timer, function (err, reply) {
+        if (reply === null) {
+            let result;
+            client.ttl(`stagepool1`, function (err, reply) {
+                res.render('searchusers', {
+
+                    error: `tenant ---Stagepool1---- is bussy, remaining time is ${reply}`
+                });
+            });
+
+        } else if (reply == "OK") {
+            tenantAvaible.push('stagepool' + (tenantAvaible.length + 1));
+
             res.render('searchusers', {
-                error: 'User does not exist'
+
+                error: `stagepool1 fue seteado`
             });
-        } else {
-            obj.id = id;
-            res.render('details', {
-                user: obj
-            });
-        }
+        };
     });
+
+
+
+
+
 });
+
+
 
 // Add user Page
 app.get('/user/add', function (req, res, next) {
@@ -60,32 +75,33 @@ app.get('/user/add', function (req, res, next) {
 
 // Processing Add User Page
 app.post('/user/add', function (req, res, next) {
-    let id = req.body.id;
-    let firstName = req.body.first_name;
-    let lastName = req.body.last_name;
-    let email = req.body.email;
-    let phone = req.body.phone;
+    let tenant = req.body.tenant;
+    let ttl = req.body.ttl;
 
-    client.hmset(id, [
-        'first_name', firstName,
-        'last_name', lastName,
-        'email', email, +
-        'phone', phone,
-    ], function (err, reply) {
-        if (err) {
-            console.log(err);
-        }
-        console.log(reply);
-        res.redirect('/');
-    });
-
+    client.set(tenant, tenant, 'ex', ttl, 'nx',
+        function (err, reply) {
+            if (reply === null) {
+                client.ttl(tenant, function (err, reply) {
+                    res.render('addusers', {
+                        error: `tenant ---${tenant}---- is bussy, remaining time is ${reply}`
+                    });
+                });
+            } else if (reply == "OK") {
+                res.render('addusers', {
+                    error: `${tenant} fue seteado`
+                });
+            };
+        });
 
 });
 
 //delete 
-app.delete('/user/delete/:id', function (req, res, next) {
-    client.del(req.params.id);
-    res.redirect('/');
+app.post('/user/delete/', function (req, res, next) {
+    let tenat1 = req.body.tenant;
+    client.del(tenat1);
+    res.render('addusers', {
+        error: `${tenat1} fue desbloqueado`
+    });
 });
 
 app.listen(port, function () {
